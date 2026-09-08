@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sistema de Pedidos | Gestão & Controle</title>
+
+  <!-- Google Fonts: Inter & Outfit -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@500;600;700&display=swap" rel="stylesheet">
+
+  <!-- FontAwesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+  <!-- Custom Styles -->
+  <link rel="stylesheet" href="styles.css">
+
+  <!-- Supabase JS Client CDNs (Primary & Fallback) -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script>
+    if (!window.supabase) {
+      document.write('<script src="https://unpkg.com/@supabase/supabase-js@2"><\/script>');
+    }
+  </script>
+</head>
+<body>
+  <!-- Toast Notification Container -->
+  <div id="toast-container" class="toast-container"></div>
+
+  <!-- Header App -->
+  <header class="app-header">
+    <div class="header-container">
+      <div class="brand">
+        <div class="brand-icon">
+          <i class="fa-solid fa-clipboard-list"></i>
+        </div>
+        <div>
+          <h1 class="brand-title">Gestão de Pedidos</h1>
+          <p class="brand-subtitle">Painel Empresarial Integrado ao Supabase</p>
+        </div>
+      </div>
+      <div class="header-actions">
+        <button id="btn-theme-toggle" class="btn btn-secondary" title="Alternar entre Tema Claro e Tema Escuro">
+          <i id="theme-toggle-icon" class="fa-solid fa-moon"></i>
+          <span id="theme-toggle-text">Modo Escuro</span>
+        </button>
+        <button id="btn-refresh" class="btn btn-secondary" title="Atualizar dados manualmente">
+          <i class="fa-solid fa-rotate-right"></i>
+          <span>Atualizar</span>
+        </button>
+        <button id="btn-export" class="btn btn-secondary" title="Exportar pedidos visíveis em CSV">
+          <i class="fa-solid fa-file-csv"></i>
+          <span>Exportar CSV</span>
+        </button>
+        <button id="btn-new-order" class="btn btn-primary">
+          <i class="fa-solid fa-plus"></i>
+          <span>Novo Pedido</span>
+        </button>
+        <a href="chatbot.html" class="btn btn-primary" title="Abrir página pública do chatbot para clientes" style="text-decoration:none; background:linear-gradient(135deg,#7c3aed,#2563eb);">
+          <i class="fa-solid fa-robot"></i>
+          <span>Chatbot Cliente</span>
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Container -->
+  <main class="main-content">
+    
+    <!-- Summary KPI Cards -->
+    <section class="kpi-grid">
+      <div class="kpi-card">
+        <div class="kpi-icon kpi-blue">
+          <i class="fa-solid fa-boxes-stacked"></i>
+        </div>
+        <div class="kpi-info">
+          <span class="kpi-label">Total de Pedidos</span>
+          <strong id="kpi-total-count" class="kpi-value">0</strong>
+        </div>
+      </div>
+
+      <div class="kpi-card">
+        <div class="kpi-icon kpi-green">
+          <i class="fa-solid fa-hand-holding-dollar"></i>
+        </div>
+        <div class="kpi-info">
+          <span class="kpi-label">Faturamento Total</span>
+          <strong id="kpi-total-value" class="kpi-value">R$ 0,00</strong>
+        </div>
+      </div>
+
+      <div class="kpi-card">
+        <div class="kpi-icon kpi-amber">
+          <i class="fa-solid fa-clock-rotate-left"></i>
+        </div>
+        <div class="kpi-info">
+          <span class="kpi-label">Pendentes / Em Aberto</span>
+          <strong id="kpi-pending-count" class="kpi-value">0</strong>
+        </div>
+      </div>
+
+      <div class="kpi-card">
+        <div class="kpi-icon kpi-purple">
+          <i class="fa-solid fa-chart-line"></i>
+        </div>
+        <div class="kpi-info">
+          <span class="kpi-label">Ticket Médio</span>
+          <strong id="kpi-avg-value" class="kpi-value">R$ 0,00</strong>
+        </div>
+      </div>
+    </section>
+
+    <!-- Toolbar: Search & Filters -->
+    <section class="toolbar-card">
+      
+      <!-- Sector Action Buttons Bar -->
+      <div class="sector-pills-bar">
+        <span class="sector-bar-title"><i class="fa-solid fa-layer-group"></i> Setores:</span>
+        <div id="sector-buttons-group" class="sector-buttons-group">
+          <button class="sector-action-btn active" data-setor="todos">
+            <i class="fa-solid fa-border-all"></i>
+            <span>Todos</span>
+            <span id="badge-count-todos" class="sector-count-badge">0</span>
+          </button>
+          <button class="sector-action-btn sector-btn-pet" data-setor="Pet Shop">
+            <i class="fa-solid fa-paw"></i>
+            <span>Pet Shop</span>
+            <span id="badge-count-pet" class="sector-count-badge">0</span>
+          </button>
+          <button class="sector-action-btn sector-btn-oficina" data-setor="Oficina">
+            <i class="fa-solid fa-wrench"></i>
+            <span>Oficina</span>
+            <span id="badge-count-oficina" class="sector-count-badge">0</span>
+          </button>
+          <button class="sector-action-btn sector-btn-confeitaria" data-setor="Confeitaria">
+            <i class="fa-solid fa-cake-candles"></i>
+            <span>Confeitaria</span>
+            <span id="badge-count-confeitaria" class="sector-count-badge">0</span>
+          </button>
+          <button class="sector-action-btn sector-btn-salao" data-setor="Salão">
+            <i class="fa-solid fa-scissors"></i>
+            <span>Salão</span>
+            <span id="badge-count-salao" class="sector-count-badge">0</span>
+          </button>
+          <button class="sector-action-btn sector-btn-grafica" data-setor="Gráfica">
+            <i class="fa-solid fa-print"></i>
+            <span>Gráfica</span>
+            <span id="badge-count-grafica" class="sector-count-badge">0</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="search-box">
+        <i class="fa-solid fa-magnifying-glass search-icon"></i>
+        <input type="text" id="search-input" placeholder="Buscar por cliente, serviço, telefone ou observações..." autocomplete="off">
+        <button id="search-clear" class="btn-clear hidden" title="Limpar busca">&times;</button>
+      </div>
+
+      <div class="filters-group">
+        <div class="filter-item">
+          <label for="filter-setor"><i class="fa-solid fa-tags"></i> Setor:</label>
+          <select id="filter-setor">
+            <option value="todos">Todos os Setores</option>
+            <option value="Pet Shop">Pet Shop 🐾</option>
+            <option value="Oficina">Oficina 🔧</option>
+            <option value="Confeitaria">Confeitaria 🍰</option>
+            <option value="Salão">Salão ✂️</option>
+            <option value="Gráfica">Gráfica 🖨️</option>
+          </select>
+        </div>
+
+        <div class="filter-item">
+          <label for="filter-status"><i class="fa-solid fa-list-check"></i> Status:</label>
+          <select id="filter-status">
+            <option value="todos">Todos os Status</option>
+            <option value="Confirmado">Confirmado</option>
+            <option value="Agendado">Agendado</option>
+            <option value="Pendente">Pendente</option>
+            <option value="Em andamento">Em andamento</option>
+            <option value="Em produção">Em produção</option>
+            <option value="Aguardando orçamento">Aguardando orçamento</option>
+            <option value="Aguardando arte">Aguardando arte</option>
+            <option value="Concluído">Concluído</option>
+            <option value="Cancelado">Cancelado</option>
+          </select>
+        </div>
+
+        <div class="filter-item">
+          <label for="sort-by"><i class="fa-solid fa-arrow-down-short-wide"></i> Ordenar:</label>
+          <select id="sort-by">
+            <option value="recents">Mais Recentes (ID)</option>
+            <option value="oldest">Mais Antigos</option>
+            <option value="cliente">Cliente (A-Z)</option>
+            <option value="valor-high">Maior Valor</option>
+            <option value="valor-low">Menor Valor</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- View Selector (Simple List is default) -->
+      <div class="view-selector">
+        <button id="view-list" class="view-btn active" title="Visualização em Lista Simples">
+          <i class="fa-solid fa-list-ul"></i>
+          <span>Lista Simples</span>
+        </button>
+        <button id="view-table" class="view-btn" title="Visualização em Tabela">
+          <i class="fa-solid fa-table"></i>
+          <span>Tabela</span>
+        </button>
+        <button id="view-cards" class="view-btn" title="Visualização em Cartões">
+          <i class="fa-solid fa-border-all"></i>
+          <span>Cartões</span>
+        </button>
+      </div>
+    </section>
+
+    <!-- Orders Section Header -->
+    <div class="orders-header">
+      <div class="orders-count-badge">
+        <span id="showing-count">Exibindo 0 pedidos</span>
+      </div>
+      <div id="realtime-status" class="realtime-badge">
+        <span class="pulse-dot"></span> <span id="status-text">Conectando ao Supabase...</span>
+      </div>
+    </div>
+
+    <!-- Orders Views Container -->
+    <section id="orders-container" class="orders-container">
+      
+      <!-- Loading State -->
+      <div id="loading-state" class="empty-state">
+        <i class="fa-solid fa-spinner fa-spin spinner-icon"></i>
+        <p>Carregando pedidos do Supabase...</p>
+      </div>
+
+      <!-- Error State -->
+      <div id="error-state" class="empty-state hidden">
+        <i class="fa-solid fa-circle-exclamation text-danger empty-icon"></i>
+        <h3>Falha ao carregar dados</h3>
+        <p id="error-message-text" class="text-muted">Não foi possível se conectar ao Supabase.</p>
+        <button id="btn-retry-fetch" class="btn btn-primary mt-1" style="margin-top: 1rem;">
+          <i class="fa-solid fa-rotate-right"></i> Tentar Novamente
+        </button>
+      </div>
+
+      <!-- Empty State -->
+      <div id="empty-state" class="empty-state hidden">
+        <i class="fa-solid fa-box-open empty-icon"></i>
+        <h3>Nenhum pedido encontrado</h3>
+        <p>Tente alterar os filtros de busca ou adicione um novo pedido no botão acima.</p>
+      </div>
+
+      <!-- 1. Lista Simples View (Default) -->
+      <div id="simple-list-view" class="view-panel active-view">
+        <ul id="simple-list-items" class="simple-list"></ul>
+      </div>
+
+      <!-- 2. Table View -->
+      <div id="table-view" class="view-panel hidden">
+        <div class="table-responsive">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Setor</th>
+                <th>Cliente</th>
+                <th>Contato</th>
+                <th>Serviço</th>
+                <th>Data / Horário</th>
+                <th>Valor (R$)</th>
+                <th>Status</th>
+                <th>Observações</th>
+                <th class="text-right">Ações</th>
+              </tr>
+            </thead>
+            <tbody id="table-body"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- 3. Cards View -->
+      <div id="cards-view" class="view-panel hidden">
+        <div id="cards-grid" class="cards-grid"></div>
+      </div>
+
+    </section>
+  </main>
+
+  <!-- Modal Pedido (Criar / Editar) -->
+  <div id="pedido-modal" class="modal-overlay hidden">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h2 id="modal-title"><i class="fa-solid fa-file-circle-plus"></i> Novo Pedido</h2>
+        <button id="btn-close-modal" class="modal-close-btn">&times;</button>
+      </div>
+      
+      <form id="pedido-form" class="modal-form">
+        <input type="hidden" id="pedido-id" value="">
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="form-setor">Setor <span class="required">*</span></label>
+            <select id="form-setor" required>
+              <option value="">Selecione o setor...</option>
+              <option value="Pet Shop">Pet Shop 🐾</option>
+              <option value="Oficina">Oficina 🔧</option>
+              <option value="Confeitaria">Confeitaria 🍰</option>
+              <option value="Salão">Salão ✂️</option>
+              <option value="Gráfica">Gráfica 🖨️</option>
+              <option value="Geral">Outro / Geral 📦</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="form-status">Status <span class="required">*</span></label>
+            <select id="form-status" required>
+              <option value="Pendente">Pendente</option>
+              <option value="Confirmado">Confirmado</option>
+              <option value="Agendado">Agendado</option>
+              <option value="Em andamento">Em andamento</option>
+              <option value="Em produção">Em produção</option>
+              <option value="Aguardando orçamento">Aguardando orçamento</option>
+              <option value="Aguardando arte">Aguardando arte</option>
+              <option value="Concluído">Concluído</option>
+              <option value="Cancelado">Cancelado</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="form-cliente">Nome do Cliente <span class="required">*</span></label>
+            <input type="text" id="form-cliente" placeholder="Ex: Ana Souza" required>
+          </div>
+
+          <div class="form-group">
+            <label for="form-telefone">Telefone / WhatsApp</label>
+            <input type="text" id="form-telefone" placeholder="Ex: (11) 99876-1234">
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="form-servico">Serviço / Produto <span class="required">*</span></label>
+            <input type="text" id="form-servico" placeholder="Ex: Banho e Tosa, Troca de Óleo, Bolo 2kg..." required>
+          </div>
+
+          <div class="form-group">
+            <label for="form-valor">Valor (R$) <span class="required">*</span></label>
+            <input type="number" id="form-valor" step="0.01" min="0" placeholder="0,00" required>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="form-data-pedido">Data / Agendamento</label>
+          <input type="text" id="form-data-pedido" placeholder="Ex: Sábado, 09h ou 15/10 às 14:00">
+        </div>
+
+        <div class="form-group">
+          <label for="form-observacoes">Observações / Detalhes</label>
+          <textarea id="form-observacoes" rows="3" placeholder="Ex: Pet: Thor, Golden Retriever; Preferência de entrega..."></textarea>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" id="btn-cancel-modal" class="btn btn-secondary">Cancelar</button>
+          <button type="submit" id="btn-save-pedido" class="btn btn-primary">
+            <i class="fa-solid fa-check"></i>
+            <span>Salvar Pedido</span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal Confirmar Exclusão -->
+  <div id="delete-modal" class="modal-overlay hidden">
+    <div class="modal-card modal-card-sm">
+      <div class="modal-header">
+        <h2><i class="fa-solid fa-triangle-exclamation text-danger"></i> Confirmar Exclusão</h2>
+        <button id="btn-close-delete-modal" class="modal-close-btn">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p>Tem certeza que deseja excluir o pedido de <strong id="delete-client-name"></strong>?</p>
+        <p class="text-muted text-sm mt-1">Esta ação removerá o registro permanentemente do banco Supabase.</p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" id="btn-cancel-delete" class="btn btn-secondary">Cancelar</button>
+        <button type="button" id="btn-confirm-delete" class="btn btn-danger">
+          <i class="fa-solid fa-trash"></i> Sim, Excluir
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- JavaScript Principal -->
+  <script src="app.js"></script>
+</body>
+</html>

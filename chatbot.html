@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Fazer Pedido | Atendimento Virtual</title>
+  <meta name="description" content="Chatbot público para solicitar novos pedidos. Converse com nossa assistente virtual e seu pedido é registrado automaticamente.">
+
+  <!-- Google Fonts: Inter & Outfit -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@500;600;700&display=swap" rel="stylesheet">
+
+  <!-- FontAwesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+  <!-- Custom Styles (reaproveita o Design System do painel) -->
+  <link rel="stylesheet" href="styles.css">
+
+  <!-- Supabase JS Client -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body class="chatbot-page">
+  <div id="toast-container" class="toast-container"></div>
+
+  <!-- Header público -->
+  <header class="app-header">
+    <div class="header-container">
+      <div class="brand">
+        <div class="brand-icon">
+          <i class="fa-solid fa-robot"></i>
+        </div>
+        <div>
+          <h1 class="brand-title">Fazer Pedido</h1>
+          <p class="brand-subtitle">Atendimento virtual · resposta imediata</p>
+        </div>
+      </div>
+      <div class="header-actions">
+        <a href="index.html" class="btn btn-secondary" title="Voltar ao painel administrativo">
+          <i class="fa-solid fa-arrow-left"></i>
+          <span>Painel da Loja</span>
+        </a>
+        <button id="btn-chat-theme" class="btn btn-secondary" title="Alternar tema">
+          <i id="chat-theme-icon" class="fa-solid fa-moon"></i>
+          <span id="chat-theme-text">Modo Escuro</span>
+        </button>
+        <button id="btn-ia-config" class="btn btn-secondary" title="Configurar IA (GPT-OSS via Groq)">
+          <i class="fa-solid fa-brain"></i>
+          <span>IA</span>
+          <span id="ia-status-dot" class="ia-dot ia-dot-local" title="IA local ativa"></span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main class="chat-main">
+    <div class="chat-layout">
+
+      <!-- Coluna informativa -->
+      <aside class="chat-info-card">
+        <h2><i class="fa-solid fa-wand-magic-sparkles"></i> Como funciona?</h2>
+        <ol class="chat-steps">
+          <li><strong>1.</strong> Converse com a assistente aqui ao lado — pode escrever tudo de uma vez, ex: <em>"Sou Ana, quero bolo de chocolate 2kg para sábado, meu zap é 11998761234"</em>.</li>
+          <li><strong>2.</strong> A <strong>IA interpreta</strong> seu pedido (setor, serviço, telefone, data, valor).</li>
+          <li><strong>3.</strong> Você <strong>confere o resumo</strong> e confirma.</li>
+          <li><strong>4.</strong> O pedido é <strong>criado automaticamente</strong> no sistema da loja (Supabase).</li>
+        </ol>
+
+        <div class="chat-sectors">
+          <span class="sector-bar-title"><i class="fa-solid fa-layer-group"></i> Atendemos:</span>
+          <div class="sector-tags">
+            <span class="sector-badge sector-pet"><i class="fa-solid fa-paw"></i> Pet Shop</span>
+            <span class="sector-badge sector-oficina"><i class="fa-solid fa-wrench"></i> Oficina</span>
+            <span class="sector-badge sector-confeitaria"><i class="fa-solid fa-cake-candles"></i> Confeitaria</span>
+            <span class="sector-badge sector-salao"><i class="fa-solid fa-scissors"></i> Salão</span>
+            <span class="sector-badge sector-grafica"><i class="fa-solid fa-print"></i> Gráfica</span>
+          </div>
+        </div>
+
+        <div class="chat-privacy">
+          <i class="fa-solid fa-shield-halved"></i>
+          <p>Seus dados são usados <strong>apenas para o pedido</strong>. Nada de spam. Ao confirmar, você concorda em ser contatado sobre este pedido.</p>
+        </div>
+
+        <button id="btn-restart-side" class="btn btn-secondary btn-block">
+          <i class="fa-solid fa-rotate-right"></i> Recomeçar conversa
+        </button>
+      </aside>
+
+      <!-- Janela do chat -->
+      <section class="chat-window" aria-label="Chatbot de pedidos">
+        <div class="chat-window-header">
+          <div class="chat-avatar">
+            <i class="fa-solid fa-robot"></i>
+            <span class="avatar-online"></span>
+          </div>
+          <div class="chat-header-text">
+            <strong>Assistente de Pedidos</strong>
+            <span id="chat-engine-label"><i class="fa-solid fa-bolt"></i> IA local ativa · online agora</span>
+          </div>
+          <button id="btn-restart-chat" class="btn btn-secondary btn-icon-only" title="Recomeçar conversa">
+            <i class="fa-solid fa-rotate-right"></i>
+          </button>
+        </div>
+
+        <div id="chat-messages" class="chat-messages" aria-live="polite"></div>
+
+        <div id="chat-quick-replies" class="chat-quick-replies"></div>
+
+        <div id="chat-typing" class="chat-typing hidden">
+          <span></span><span></span><span></span>
+        </div>
+
+        <form id="chat-form" class="chat-input-bar" autocomplete="off">
+          <input type="text" id="chat-input" placeholder="Digite sua mensagem... (ex: quero agendar...)" maxlength="1000" autocomplete="off">
+          <button type="submit" id="chat-send" class="btn btn-primary btn-icon-only chat-send-btn" title="Enviar mensagem">
+            <i class="fa-solid fa-paper-plane"></i>
+          </button>
+        </form>
+
+        <p class="chat-hint">
+          <i class="fa-solid fa-lightbulb"></i>
+          Dica: você pode adiantar tudo numa frase só — a IA preenche o resto e só confirma com você.
+        </p>
+      </section>
+    </div>
+  </main>
+
+  <!-- Modal configuração IA -->
+  <div id="ia-modal" class="modal-overlay hidden">
+    <div class="modal-card modal-card-sm">
+      <div class="modal-header">
+        <h2><i class="fa-solid fa-brain"></i> Inteligência Artificial</h2>
+        <button id="btn-close-ia" class="modal-close-btn">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p class="text-sm text-muted">O chatbot usa o modelo <strong>GPT-OSS via Groq</strong> para entender frases livres (setor, serviço, telefone, data, valor) — com <strong>IA local</strong> de fallback se a API falhar. Para ativar a IA avançada <strong>neste navegador</strong>:</p>
+        <ol class="text-sm text-muted ia-help-list">
+          <li>Crie uma chave em <strong>console.groq.com → API Keys</strong> (gratuito).</li>
+          <li>Cole abaixo. Ela fica salva <strong>só neste navegador</strong> (não vai para o Git).</li>
+          <li>Para valer para <strong>todos os visitantes</strong>, configure um proxy com a chave em segredo (ex: Cloudflare Worker) — fale com o desenvolvedor.</li>
+        </ol>
+        <div class="form-group" style="margin-top:1rem">
+          <label for="groq-key">Chave API da Groq (só neste navegador)</label>
+          <input type="password" id="groq-key" placeholder="Cole sua chave aqui">
+        </div>
+        <p id="ia-current-mode" class="text-sm"></p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" id="btn-ia-remove" class="btn btn-secondary">Remover chave</button>
+        <button type="button" id="btn-ia-save" class="btn btn-primary"><i class="fa-solid fa-check"></i> Salvar</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="chatbot.js"></script>
+</body>
+</html>
