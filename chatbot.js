@@ -17,15 +17,15 @@ const SUPABASE_ANON_KEY = 'sb_publishable_hKZ6gh7n_Xc_7C8xhhW_og_HemVWF2-';
 //  1. Simples (este navegador): abra o chatbot, clique em "IA" e cole sua
 //     chave da Groq (console.groq.com -> API Keys). Fica salva só em
 //     localStorage, sem ir para o Git.
-//  2. Recomendado (todos os visitantes): crie um proxy que guarda a chave em
-//     segredo (ex: Cloudflare Worker, já que o site está na Cloudflare) e
-//     informe a URL em GROQ_PROXY_URL. O chatbot chama o proxy em vez da Groq.
+//  2. Recomendado (todos os visitantes): Edge Function `groq-extract`
+//     (pasta supabase/functions) com a chave em segredo. URL informada em
+//     GROQ_PROXY_URL. O chatbot chama a function em vez da Groq.
 const GROQ_API_URL = 'https://api.groq.com/openai/v1/chat/completions';
 // Tenta o 120B primeiro (mais capaz); cai para o 20B se indisponível.
 const GROQ_MODELS = ['openai/gpt-oss-120b', 'openai/gpt-oss-20b'];
-// URL do proxy opcional (Cloudflare Worker). Vazio = chamada direta à Groq
-// usando a chave salva neste navegador (modal "IA").
-const GROQ_PROXY_URL = '';
+// URL da Edge Function (proxy com a chave em segredo). Após o deploy, vale
+// para todos os visitantes sem expor nada no frontend.
+const GROQ_PROXY_URL = 'https://zkhaowtylugnjksofbcv.supabase.co/functions/v1/groq-extract';
 
 const SETORES_VALIDOS = ['Pet Shop', 'Oficina', 'Confeitaria', 'Salão', 'Gráfica', 'Geral'];
 

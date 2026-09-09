@@ -1,0 +1,7 @@
+# Config do Supabase CLI (deploy das Edge Functions)
+project_id = "zkhaowtylugnjksofbcv"
+
+# Chatbot público chama sem login -> JWT desligado (a chave da Groq
+# continua em segredo nos Secrets da function, nunca no frontend).
+[functions.groq-extract]
+verify_jwt = false
