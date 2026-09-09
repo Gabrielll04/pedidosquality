@@ -7,8 +7,8 @@
  */
 
 // ===== Config Supabase (mesma do painel) =====
-const SUPABASE_URL = 'https://pwyytcyofxtriulqesqm.supabase.co';
-const SUPABASE_ANON_KEY = 'sb_publishable_vk-vctYaPnPRm0fWlRkcTQ_RtYigr2L';
+const SUPABASE_URL = 'https://zkhaowtylugnjksofbcv.supabase.co';
+const SUPABASE_ANON_KEY = 'sb_publishable_hKZ6gh7n_Xc_7C8xhhW_og_HemVWF2-';
 
 // ===== Config Groq (modelo gpt-oss) =====
 // NUNCA coloque a chave da API direto neste arquivo: o GitHub bloqueia o push

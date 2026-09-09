@@ -4,8 +4,8 @@
  */
 
 // Supabase Configuration
-const SUPABASE_URL = 'https://pwyytcyofxtriulqesqm.supabase.co';
-const SUPABASE_ANON_KEY = 'sb_publishable_vk-vctYaPnPRm0fWlRkcTQ_RtYigr2L';
+const SUPABASE_URL = 'https://zkhaowtylugnjksofbcv.supabase.co';
+const SUPABASE_ANON_KEY = 'sb_publishable_hKZ6gh7n_Xc_7C8xhhW_og_HemVWF2-';
 
 // Global Application State
 let state = {
