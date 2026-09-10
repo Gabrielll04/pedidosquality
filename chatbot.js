@@ -597,7 +597,9 @@ async function doInsert() {
     showTyping(false);
     chatState.busy = false;
     chatState.step = 'done';
-    const id = Array.isArray(result) && result[0]?.id ? ` <strong>#${result[0].id}</strong>` : '';
+    const r0 = Array.isArray(result) ? result[0] : null;
+    const num = r0?.numero ?? r0?.id;
+    const id = num ? ` <strong>Nº ${num}</strong>` : '';
     botSay(`🎉 <strong>Pedido recebido${id}!</strong><br><br>Obrigado, <strong>${escapeHtml(d.cliente)}</strong>! A loja já pode ver seu pedido de <strong>${escapeHtml(d.servico)}</strong> no sistema e vai entrar em contato${d.telefone ? ` no <strong>${escapeHtml(d.telefone)}</strong>` : ''}.`);
     botSay('Precisa de mais alguma coisa? Posso registrar <strong>outro pedido</strong> para você.');
     setQuick([{ label: 'Fazer outro pedido ➕', value: 'novo', icon: 'fa-plus' }]);

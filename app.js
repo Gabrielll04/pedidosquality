@@ -301,6 +301,19 @@ function formatCurrency(val) {
   return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(num);
 }
 
+/* Número do pedido por ordem de chegada (coluna `numero`; fallback pela posição) */
+function getNumero(item) {
+  if (item.numero != null) return Number(item.numero);
+  const ordered = [...state.pedidos].sort((a, b) => a.id - b.id);
+  const idx = ordered.findIndex(p => p.id === item.id);
+  return idx >= 0 ? idx + 1 : null;
+}
+
+function formatNumero(item) {
+  const n = getNumero(item);
+  return n != null ? `Nº ${n}` : '—';
+}
+
 function formatWhatsAppLink(phone, clientName, service) {
   if (!phone) return null;
   const digits = phone.replace(/\D/g, '');
@@ -393,6 +406,8 @@ function applyFiltersAndRender() {
     list.sort((a, b) => (b.valor || 0) - (a.valor || 0));
   } else if (state.sortBy === 'valor-low') {
     list.sort((a, b) => (a.valor || 0) - (b.valor || 0));
+  } else if (state.sortBy === 'numero') {
+    list.sort((a, b) => (getNumero(a) ?? Number.MAX_SAFE_INTEGER) - (getNumero(b) ?? Number.MAX_SAFE_INTEGER));
   }
 
   state.filteredPedidos = list;
@@ -508,7 +523,7 @@ function renderSimpleList() {
 
     li.innerHTML = `
       <div class="list-item-main">
-        <span class="list-item-id">#${item.id}</span>
+        <span class="numero-badge" title="Pedido interno #${item.id}">${formatNumero(item)}</span>
         <span class="sector-badge ${sectorConf.class}">
           <i class="fa-solid ${sectorConf.icon}"></i> ${item.setor || 'Geral'}
         </span>
@@ -561,7 +576,7 @@ function renderTableView() {
     const waUrl = formatWhatsAppLink(item.telefone, item.cliente, item.servico);
 
     tr.innerHTML = `
-      <td><strong>#${item.id}</strong></td>
+      <td><span class="numero-badge" title="Pedido interno #${item.id}">${formatNumero(item)}</span></td>
       <td>
         <span class="sector-badge ${sectorConf.class}">
           <i class="fa-solid ${sectorConf.icon}"></i> ${item.setor || 'Geral'}
@@ -607,9 +622,12 @@ function renderCardsView() {
 
     card.innerHTML = `
       <div class="card-top">
-        <span class="sector-badge ${sectorConf.class}">
-          <i class="fa-solid ${sectorConf.icon}"></i> ${item.setor || 'Geral'}
-        </span>
+        <div class="card-top-left">
+          <span class="numero-badge" title="Pedido interno #${item.id}">${formatNumero(item)}</span>
+          <span class="sector-badge ${sectorConf.class}">
+            <i class="fa-solid ${sectorConf.icon}"></i> ${item.setor || 'Geral'}
+          </span>
+        </div>
         <span class="status-pill ${statusClass}">${escapeHtml(item.status)}</span>
       </div>
 
@@ -713,8 +731,9 @@ function exportToCSV() {
     return;
   }
 
-  const headers = ['ID', 'Setor', 'Cliente', 'Telefone', 'Serviço', 'Data/Horário', 'Valor (R$)', 'Status', 'Observações'];
+  const headers = ['Nº', 'ID', 'Setor', 'Cliente', 'Telefone', 'Serviço', 'Data/Horário', 'Valor (R$)', 'Status', 'Observações'];
   const rows = state.filteredPedidos.map(p => [
+    getNumero(p) ?? '',
     p.id,
     `"${(p.setor || '').replace(/"/g, '""')}"`,
     `"${(p.cliente || '').replace(/"/g, '""')}"`,

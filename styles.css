@@ -616,6 +616,30 @@ body {
   min-width: 40px;
 }
 
+/* Número do pedido por ordem de chegada */
+.numero-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 52px;
+  padding: 0.3rem 0.65rem;
+  border-radius: var(--radius-sm);
+  background-color: var(--text-main);
+  color: var(--bg-surface);
+  font-family: var(--font-display);
+  font-size: 0.8rem;
+  font-weight: 700;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.card-top-left {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
 .sector-badge {
   display: inline-flex;
   align-items: center;

@@ -1,13 +1,17 @@
--- ==========================================================================
+﻿-- ==========================================================================
 -- Schema do projeto: Sistema de Pedidos + Chatbot público
 -- Banco: Supabase Postgres
 -- Como aplicar: Supabase Dashboard -> SQL Editor -> New query -> colar -> Run
 -- Script idempotente: pode rodar de novo sem duplicar nada.
 -- ==========================================================================
 
--- 1. Tabela de pedidos (colunas usadas por app.js e chatbot.js) ----------------
+-- 1. Sequência do número por ordem de chegada (criada antes da tabela) -------
+CREATE SEQUENCE IF NOT EXISTS public.pedidos_numero_seq;
+
+-- 2. Tabela de pedidos (colunas usadas por app.js e chatbot.js) ----------------
 CREATE TABLE IF NOT EXISTS public.pedidos (
   id            BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  numero        BIGINT DEFAULT nextval('public.pedidos_numero_seq'),
   created_at    TIMESTAMPTZ NOT NULL DEFAULT now(),
   setor         TEXT NOT NULL DEFAULT 'Geral',
   status        TEXT NOT NULL DEFAULT 'Pendente',
@@ -20,6 +24,7 @@ CREATE TABLE IF NOT EXISTS public.pedidos (
 );
 
 -- Garante colunas caso a tabela já exista com formato antigo
+ALTER TABLE public.pedidos ADD COLUMN IF NOT EXISTS numero      BIGINT DEFAULT nextval('public.pedidos_numero_seq');
 ALTER TABLE public.pedidos ADD COLUMN IF NOT EXISTS created_at  TIMESTAMPTZ NOT NULL DEFAULT now();
 ALTER TABLE public.pedidos ADD COLUMN IF NOT EXISTS setor       TEXT NOT NULL DEFAULT 'Geral';
 ALTER TABLE public.pedidos ADD COLUMN IF NOT EXISTS status      TEXT NOT NULL DEFAULT 'Pendente';
@@ -30,12 +35,13 @@ ALTER TABLE public.pedidos ADD COLUMN IF NOT EXISTS valor       NUMERIC(10, 2) N
 ALTER TABLE public.pedidos ADD COLUMN IF NOT EXISTS data_pedido TEXT;
 ALTER TABLE public.pedidos ADD COLUMN IF NOT EXISTS observacoes TEXT;
 
--- 2. Índices para filtros do painel --------------------------------------------
+-- 3. Índices para filtros do painel --------------------------------------------
 CREATE INDEX IF NOT EXISTS idx_pedidos_setor  ON public.pedidos (setor);
+CREATE INDEX IF NOT EXISTS idx_pedidos_numero ON public.pedidos (numero);
 CREATE INDEX IF NOT EXISTS idx_pedidos_status ON public.pedidos (status);
 CREATE INDEX IF NOT EXISTS idx_pedidos_id_desc ON public.pedidos (id DESC);
 
--- 3. Realtime (atualização ao vivo no painel) ------------------------------------
+-- 4. Realtime (atualização ao vivo no painel) ------------------------------------
 -- Inclui a tabela na publicação do Realtime (ignora se já estiver incluída)
 DO $$
 BEGIN
@@ -48,7 +54,7 @@ BEGIN
 END
 $$;
 
--- 4. Segurança (RLS) -------------------------------------------------------------
+-- 5. Segurança (RLS) -------------------------------------------------------------
 -- O painel (app.js) e o chatbot (chatbot.js) usam a chave ANON pública para
 -- ler, criar, atualizar e excluir. As policies abaixo liberam isso.
 -- ATENÇÃO: acesso aberto. Quando quiser restringir (ex: login para o painel),
