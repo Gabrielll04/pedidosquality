@@ -167,12 +167,36 @@
         <button id="btn-close-settings" class="tbtn" aria-label="Fechar">✕</button>
       </div>
       <div class="dialog-body">
-        <p class="dialog-lead">A chave da Groq <strong>nunca</strong> vai para o repositório. Em produção o frontend chama <code>/api/chat</code> na Cloudflare (variável <code>GROQ_API_KEY</code>). Abaixo: Supabase, nome de saudação e chave só para teste local.</p>
-        <label class="field"><span>Como devemos tratá-lo(a)?</span><input id="set-name" type="text" maxlength="30" placeholder="Ex.: Emily"></label>
-        <label class="field"><span>Supabase URL</span><input id="set-supabase-url" type="url" placeholder="https://xxxx.supabase.co"></label>
-        <label class="field"><span>Supabase anon key</span><input id="set-supabase-key" type="password" placeholder="sb_publishable_…"></label>
-        <label class="field"><span>Chave Groq — apenas teste local</span><input id="set-groq-key" type="password" placeholder="gsk_… (só neste navegador)"></label>
-        <label class="field"><span>Instrução de estilo</span><textarea id="set-system" rows="3"></textarea></label>
+        <p class="dialog-lead">Configure as credenciais abaixo. Ficam guardadas <strong>só neste navegador</strong> — nada vai para o repositório. Em produção, a chave da Groq deve estar na variável <code>GROQ_API_KEY</code> da Cloudflare (<code>/api/chat</code>).</p>
+
+        <section class="set-section">
+          <div class="set-sec-title"><span>Supabase — banco das conversas</span><span id="sb-badge" class="badge">não testado</span></div>
+          <label class="field"><span>Supabase URL</span><input id="set-supabase-url" type="url" placeholder="https://xxxx.supabase.co" autocomplete="off"></label>
+          <label class="field"><span>Anon key</span>
+            <span class="input-row">
+              <input id="set-supabase-key" type="password" placeholder="sb_publishable_…" autocomplete="off">
+              <button type="button" id="eye-sb" class="mini-btn" title="Mostrar/ocultar" aria-label="Mostrar ou ocultar chave">◎</button>
+            </span>
+          </label>
+          <button type="button" id="btn-test-sb" class="ghost">Testar conexão</button>
+        </section>
+
+        <section class="set-section">
+          <div class="set-sec-title"><span>Groq — IA (modelo GPT-OSS)</span><span id="groq-badge" class="badge">não testado</span></div>
+          <label class="field"><span>API key da Groq</span>
+            <span class="input-row">
+              <input id="set-groq-key" type="password" placeholder="gsk_… (console.groq.com → API Keys)" autocomplete="off">
+              <button type="button" id="eye-groq" class="mini-btn" title="Mostrar/ocultar" aria-label="Mostrar ou ocultar chave">◎</button>
+            </span>
+          </label>
+          <button type="button" id="btn-test-groq" class="ghost">Testar chave</button>
+        </section>
+
+        <section class="set-section">
+          <div class="set-sec-title"><span>Personalização</span></div>
+          <label class="field"><span>Como devemos tratá-lo(a)?</span><input id="set-name" type="text" maxlength="30" placeholder="Ex.: Emily" autocomplete="off"></label>
+          <label class="field"><span>Instrução de estilo</span><textarea id="set-system" rows="3"></textarea></label>
+        </section>
       </div>
       <div class="dialog-foot">
         <button id="btn-wipe-local" class="ghost danger">Limpar dados locais</button>

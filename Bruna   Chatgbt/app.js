@@ -52,6 +52,8 @@ document.addEventListener("DOMContentLoaded", () => {
     "btn-close-settings", "btn-settings-cancel", "btn-settings-save",
     "btn-wipe-local", "btn-reason", "btn-deep", "btn-mic",
     "btn-attach", "file", "btn-bell", "btn-account",
+    "sb-badge", "groq-badge", "btn-test-sb", "btn-test-groq",
+    "eye-sb", "eye-groq",
   ].forEach((id) => { els[id] = $(id); });
 
   initTheme();
@@ -148,6 +150,11 @@ function bindUI() {
     store.del(LOCAL_KEY);
     toast("Dados locais apagados.");
   });
+  // testes de credenciais + mostrar/ocultar
+  els["btn-test-sb"].addEventListener("click", testSupabase);
+  els["btn-test-groq"].addEventListener("click", testGroq);
+  els["eye-sb"].addEventListener("click", () => toggleEye("set-supabase-key"));
+  els["eye-groq"].addEventListener("click", () => toggleEye("set-groq-key"));
   document.addEventListener("keydown", (e) => { if (e.key === "Escape") closeSettings(); });
 }
 
@@ -571,9 +578,58 @@ function openSettings() {
   els["set-supabase-key"].value = cfg.supabaseKey;
   els["set-groq-key"].value = cfg.groqKey;
   els["set-system"].value = cfg.system;
+  setBadge("sb-badge", dbMode === "supabase" ? "ok" : "", dbMode === "supabase" ? "ligado" : "não testado");
+  setBadge("groq-badge", cfg.groqKey ? "" : "err", cfg.groqKey ? "chave presente" : "sem chave");
   els["settings-modal"].hidden = false;
 }
 function closeSettings() { els["settings-modal"].hidden = true; }
+function toggleEye(inputId) {
+  const i = els[inputId];
+  i.type = i.type === "password" ? "text" : "password";
+}
+function setBadge(id, state, text) {
+  const b = els[id];
+  b.className = "badge" + (state ? " " + state : "");
+  b.textContent = text;
+}
+/* Testa URL + anon key contra o Supabase (tabela conversas) */
+async function testSupabase() {
+  const url = els["set-supabase-url"].value.trim();
+  const key = els["set-supabase-key"].value.trim();
+  if (!url || !key) { setBadge("sb-badge", "err", "preencha os campos"); return; }
+  setBadge("sb-badge", "", "a testar…");
+  try {
+    if (!window.supabase?.createClient) throw new Error("SDK Supabase não carregou.");
+    const c = window.supabase.createClient(url, key);
+    const { error } = await c.from("conversas").select("id", { count: "exact", head: true });
+    if (error) {
+      if (/relation .* does not exist|Could not find the table/i.test(error.message))
+        throw new Error("Tabelas ausentes — rode o supabase.sql no SQL Editor.");
+      throw error;
+    }
+    setBadge("sb-badge", "ok", "conexão OK");
+  } catch (e) {
+    setBadge("sb-badge", "err", "falhou");
+    toast("Supabase: " + (e.message || e).toString().slice(0, 160), true);
+  }
+}
+/* Valida a API key da Groq (lista modelos) */
+async function testGroq() {
+  const key = els["set-groq-key"].value.trim();
+  if (!key) { setBadge("groq-badge", "err", "cole a chave"); return; }
+  setBadge("groq-badge", "", "a testar…");
+  try {
+    const r = await fetch("https://api.groq.com/openai/v1/models", {
+      headers: { Authorization: "Bearer " + key },
+    });
+    if (r.ok) setBadge("groq-badge", "ok", "chave válida");
+    else if (r.status === 401) { setBadge("groq-badge", "err", "chave inválida"); toast("Groq: chave inválida (401).", true); }
+    else { setBadge("groq-badge", "err", "erro " + r.status); toast("Groq respondeu HTTP " + r.status + ".", true); }
+  } catch {
+    setBadge("groq-badge", "err", "sem acesso");
+    toast("Não foi possível alcançar a Groq. Verifique a internet.", true);
+  }
+}
 async function saveSettings() {
   cfg.name = els["set-name"].value.trim().slice(0, 30);
   cfg.supabaseUrl = els["set-supabase-url"].value.trim() || DEFAULTS.SUPABASE_URL;
